@@ -224,3 +224,22 @@ td input.cell-editor {
     display: flex;
     gap: 12px;
 }
+
+/* Embedded view adjustments */
+body.embedded {
+    padding: 0;
+    overflow: hidden;
+    /* Recommended for iframes if using internal scroll */
+}
+
+body.embedded .table-container {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    max-height: 100vh;
+}
+
+#embedCodeArea {
+    resize: none;
+    background: #f6f8fa;
+}
