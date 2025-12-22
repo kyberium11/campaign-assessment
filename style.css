@@ -243,3 +243,72 @@ body.embedded .table-container {
     resize: none;
     background: #f6f8fa;
 }
+
+/* Navigation */
+nav {
+    background: #24292f;
+    padding: 0 20px;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    padding: 12px 0;
+    font-weight: 500;
+    font-size: 14px;
+    border-bottom: 2px solid transparent;
+}
+
+nav a:hover {
+    color: #8b949e;
+}
+
+nav a.active {
+    border-bottom: 2px solid var(--primary-color);
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.status-poor {
+    background: #ffebe9;
+    color: #cf222e;
+}
+
+.status-stable {
+    background: #fff8c5;
+    color: #9a6700;
+}
+
+.status-meets {
+    background: #dafbe1;
+    color: #1a7f37;
+}
+
+.status-exceeds {
+    background: #ddf4ff;
+    color: #0969da;
+}
+
+.status-excellent {
+    background: #fbefff;
+    color: #8250df;
+}
+
+.campaign-badge {
+    background: #0969da;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 10px;
+}

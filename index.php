@@ -20,6 +20,10 @@ try {
 </head>
 <body class="<?= $is_embedded ? 'embedded' : '' ?>">
 <?php if (!$is_embedded): ?>
+    <nav>
+        <a href="index.php" class="active">Campaign Metrics</a>
+        <a href="assessment.php">Campaign Assessment (Automated)</a>
+    </nav>
     <header>
         <h1>Campaign Metrics</h1>
         <div class="header-actions">
