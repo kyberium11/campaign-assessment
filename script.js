@@ -130,48 +130,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Network error');
             });
     }
-}
 
     // --- CSV Import ---
     const btnImport = document.getElementById('btnImport');
-const csvInput = document.getElementById('csvInput');
+    const csvInput = document.getElementById('csvInput');
 
-btnImport.addEventListener('click', () => {
-    csvInput.click();
-});
+    btnImport.addEventListener('click', () => {
+        csvInput.click();
+    });
 
-csvInput.addEventListener('change', () => {
-    if (csvInput.files.length === 0) return;
+    csvInput.addEventListener('change', () => {
+        if (csvInput.files.length === 0) return;
 
-    const file = csvInput.files[0];
-    const formData = new FormData();
-    formData.append('action', 'import_csv');
-    formData.append('csv_file', file);
+        const file = csvInput.files[0];
+        const formData = new FormData();
+        formData.append('action', 'import_csv');
+        formData.append('csv_file', file);
 
-    btnImport.textContent = 'Importing...';
-    btnImport.disabled = true;
+        btnImport.textContent = 'Importing...';
+        btnImport.disabled = true;
 
-    fetch('api.php', {
-        method: 'POST',
-        body: formData
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                window.location.reload();
-            } else {
-                alert('Error importing: ' + data.message);
-            }
+        fetch('api.php', {
+            method: 'POST',
+            body: formData
         })
-        .catch(err => {
-            console.error(err);
-            alert('Network error during import.');
-        })
-        .finally(() => {
-            btnImport.textContent = 'Import CSV';
-            btnImport.disabled = false;
-            csvInput.value = '';
-        });
-});
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                    alert('Error importing: ' + data.message);
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Network error during import.');
+            })
+            .finally(() => {
+                btnImport.textContent = 'Import CSV';
+                btnImport.disabled = false;
+                csvInput.value = '';
+            });
+    });
 });
