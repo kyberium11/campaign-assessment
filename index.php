@@ -16,15 +16,24 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaign Metrics</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= filemtime('style.css') ?>">
+    <script>
+        // Auto-detect iframe and hide navigation
+        if (window.self !== window.top) {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('embedded');
+                document.querySelectorAll('.tabs, header, .sub-tabs').forEach(el => el.classList.add('iframe-hidden'));
+            });
+        }
+    </script>
 </head>
 <body class="<?= $is_embedded ? 'embedded' : '' ?>">
 <?php if (!$is_embedded): ?>
-    <nav class="tabs">
+    <nav class="tabs <?= ($is_embedded || isset($_GET['embed'])) ? 'iframe-hidden' : '' ?>">
         <a href="index.php" class="tab-item active">Campaign Metrics</a>
         <a href="assessment.php" class="tab-item">Campaign Assessment (Automated)</a>
     </nav>
-    <header>
+    <header class="<?= ($is_embedded || isset($_GET['embed'])) ? 'iframe-hidden' : '' ?>">
         <h1>Campaign Metrics</h1>
         <div class="header-actions">
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
@@ -135,6 +144,6 @@ try {
                 </div>
             </form>
         </div>
-    <script src="script.js"></script>
+    <script src="script.js?v=<?= filemtime('script.js') ?>"></script>
 </body>
 </html>

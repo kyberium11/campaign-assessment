@@ -45,11 +45,20 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Campaign Assessment</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=<?= filemtime('style.css') ?>">
+    <script>
+        // Auto-detect iframe and hide navigation
+        if (window.self !== window.top) {
+            document.addEventListener('DOMContentLoaded', () => {
+                document.body.classList.add('embedded');
+                document.querySelectorAll('.tabs, header, .sub-tabs').forEach(el => el.classList.add('iframe-hidden'));
+            });
+        }
+    </script>
 </head>
 <body class="assessment-page <?= $is_embedded ? 'embedded' : '' ?>">
 
-<?php if (!$is_embedded): ?>
+<?php if (!$is_embedded && !isset($_GET['embed'])): ?>
     <nav class="tabs">
         <a href="index.php" class="tab-item">Campaign Metrics</a>
         <a href="assessment.php" class="tab-item active">Campaign Assessment (Automated)</a>
@@ -152,6 +161,6 @@ try {
         </div>
     </div>
 
-    <script src="assessment_script.js"></script>
+    <script src="assessment_script.js?v=<?= filemtime('assessment_script.js') ?>"></script>
 </body>
 </html>
