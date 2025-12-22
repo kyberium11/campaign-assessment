@@ -1,8 +1,8 @@
 <?php
 $host = 'localhost';
-$dbname = 'campaign_assessment';
-$username = 'root';
-$password = ''; // Default XAMPP password
+$dbname = 'jeshieco_campaign_assessment';
+$username = 'jeshieco_campaign_assessment';
+$password = 'jeshieco_campaign_assessment'; // Default XAMPP password
 
 try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
