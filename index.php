@@ -20,14 +20,13 @@ try {
 </head>
 <body class="<?= $is_embedded ? 'embedded' : '' ?>">
 <?php if (!$is_embedded): ?>
-    <nav>
-        <a href="index.php" class="active">Campaign Metrics</a>
-        <a href="assessment.php">Campaign Assessment (Automated)</a>
+    <nav class="tabs">
+        <a href="index.php" class="tab-item active">Campaign Metrics</a>
+        <a href="assessment.php" class="tab-item">Campaign Assessment (Automated)</a>
     </nav>
     <header>
         <h1>Campaign Metrics</h1>
         <div class="header-actions">
-            <button class="btn-secondary" id="btnGetEmbed">Get Embed Code</button>
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
             <button class="btn-secondary" id="btnImport">Import CSV</button>
             <button class="btn-add" id="btnAdd">+ Add Data</button>
@@ -40,6 +39,7 @@ try {
             <thead>
                 <tr>
                     <th>Metrics_ID</th>
+                    <th>Record ID</th>
                     <th>Campaign</th>
                     <th>Month & Yr</th>
                     <th class="col-percentage">Website Speed (Mobile)</th>
@@ -56,6 +56,9 @@ try {
                 <?php foreach ($metrics as $row): ?>
                 <tr data-id="<?= $row['id'] ?>">
                     <td class="editable" data-col="metrics_id"><?= htmlspecialchars($row['metrics_id']) ?></td>
+                    <td class="col-center" style="font-size: 11px; color: #57606a;">
+                        <?= htmlspecialchars($row['campaign']) ?> : <?= date('F-Y', strtotime($row['month_yr'])) ?>
+                    </td>
                     <td class="editable" data-col="campaign"><?= htmlspecialchars($row['campaign']) ?></td>
                     <td class="editable" data-col="month_yr"><?= htmlspecialchars($row['month_yr']) ?></td>
                     <td class="editable col-percentage" data-col="speed_mobile"><?= ($row['speed_mobile'] * 100) ?>%</td>

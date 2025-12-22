@@ -82,7 +82,7 @@ foreach ($allMetrics as $curr) {
     list($healthLabel, $healthClass) = getHealthLabel($healthScore);
 
     $results[] = [
-        'record_id' => $curr['metrics_id'] . ' : ' . date('F Y', strtotime($curr['month_yr'])),
+        'record_id' => $campaign . ' : ' . date('F-Y', strtotime($curr['month_yr'])),
         'campaign_code' => $campaign,
         'date' => date('F d, Y', strtotime($curr['month_yr'])),
         'speed' => $speedScore,
@@ -108,9 +108,9 @@ foreach ($allMetrics as $curr) {
 </head>
 <body>
 
-    <nav>
-        <a href="index.php">Campaign Metrics</a>
-        <a href="assessment.php" class="active">Campaign Assessment (Automated)</a>
+    <nav class="tabs">
+        <a href="index.php" class="tab-item">Campaign Metrics</a>
+        <a href="assessment.php" class="tab-item active">Campaign Assessment (Automated)</a>
     </nav>
 
     <header style="padding: 0 20px;">

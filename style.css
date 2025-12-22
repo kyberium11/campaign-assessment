@@ -244,30 +244,35 @@ body.embedded .table-container {
     background: #f6f8fa;
 }
 
-/* Navigation */
-nav {
-    background: #24292f;
+/* Navigation Tabs */
+nav.tabs {
+    background: #ffffff;
     padding: 0 20px;
     margin-bottom: 20px;
     display: flex;
-    gap: 20px;
+    gap: 0;
+    border-bottom: 1px solid var(--border-color);
 }
 
-nav a {
-    color: white;
+nav.tabs a.tab-item {
+    color: #57606a;
     text-decoration: none;
-    padding: 12px 0;
+    padding: 12px 24px;
     font-weight: 500;
     font-size: 14px;
     border-bottom: 2px solid transparent;
+    transition: all 0.2s;
 }
 
-nav a:hover {
-    color: #8b949e;
+nav.tabs a.tab-item:hover {
+    color: var(--text-color);
+    background: #f6f8fa;
 }
 
-nav a.active {
-    border-bottom: 2px solid var(--primary-color);
+nav.tabs a.tab-item.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    background: transparent;
 }
 
 /* Status Badges */
