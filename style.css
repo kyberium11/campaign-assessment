@@ -1,0 +1,226 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    --border-color: #d0d7de;
+    --header-bg: #f6f8fa;
+    --row-hover-bg: #f1f3f5;
+    --primary-color: #0969da;
+    --text-color: #24292f;
+    --cell-padding: 8px 12px;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #ffffff;
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    font-size: 13px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin: 0;
+}
+
+.btn-add {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-add:hover {
+    background-color: #085ebd;
+}
+
+.table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    max-height: 80vh;
+    /* Allow scrolling if too long */
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    white-space: nowrap;
+}
+
+th,
+td {
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--cell-padding);
+    text-align: left;
+    min-width: 80px;
+}
+
+th:last-child,
+td:last-child {
+    border-right: none;
+}
+
+thead th {
+    background-color: var(--header-bg);
+    font-weight: 600;
+    color: #57606a;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    user-select: none;
+}
+
+tbody tr:hover {
+    background-color: var(--row-hover-bg);
+}
+
+/* Editable cells */
+td.editable {
+    cursor: cell;
+}
+
+td.editing {
+    padding: 0;
+}
+
+td input.cell-editor {
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--primary-color);
+    padding: var(--cell-padding);
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+}
+
+.modal-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.modal {
+    background: white;
+    width: 500px;
+    max-width: 90%;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 24px;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #57606a;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: span 2;
+}
+
+.form-group label {
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 4px;
+    color: #57606a;
+}
+
+.form-group input {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.modal-footer {
+    margin-top: 24px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-secondary {
+    background: #f6f8fa;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* Column specifics */
+.col-number,
+.col-percentage,
+.col-currency,
+.col-decimal {
+    text-align: right;
+}
+
+.col-center {
+    text-align: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
