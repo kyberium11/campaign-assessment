@@ -167,5 +167,111 @@ if ($action === 'import_csv') {
     exit;
 }
 
+// --- Assessment Actions ---
+
+if ($action === 'create_assessment') {
+    $metrics_id = $_POST['metrics_row_id'] ?? null;
+    if (!$metrics_id) {
+        echo json_encode(['success' => false, 'message' => 'Metric ID required']);
+        exit;
+    }
+
+    try {
+        // Fetch current metric and neighbors for calculation
+        $stmt = $pdo->prepare("SELECT * FROM campaign_metrics WHERE id = :id");
+        $stmt->execute([':id' => $metrics_id]);
+        $curr = $stmt->fetch();
+
+        if (!$curr) {
+            echo json_encode(['success' => false, 'message' => 'Metric not found']);
+            exit;
+        }
+
+        require_once 'functions.php';
+        
+        $campaign = $curr['campaign'];
+        $prevMonthDate = getLastMonth($curr['month_yr']);
+        $prevYearDate = getLastYear($curr['month_yr']);
+
+        $stmtPrev = $pdo->prepare("SELECT * FROM campaign_metrics WHERE campaign = :c AND month_yr LIKE :d LIMIT 1");
+        $stmtPrev->execute([':c' => $campaign, ':d' => "%$prevMonthDate%"]);
+        $prevMonth = $stmtPrev->fetch();
+
+        $stmtYear = $pdo->prepare("SELECT * FROM campaign_metrics WHERE campaign = :c AND month_yr LIKE :d LIMIT 1");
+        $stmtYear->execute([':c' => $campaign, ':d' => "%$prevYearDate%"]);
+        $prevYear = $stmtYear->fetch();
+
+        // Standard Calculations
+        $speedScore = $prevMonth ? calculateSpeedScore($curr['speed_mobile'], $curr['speed_desktop'], $prevMonth['speed_mobile'], $prevMonth['speed_desktop']) : 3;
+        $rankingScore = $prevMonth ? calculateRankingScore($curr['ranking'], $prevMonth['ranking']) : 3;
+        $leadsScore = $prevYear ? calculateLeadsScore($curr['leads'], $prevYear['leads']) : 3;
+        $trafficScore = $prevYear ? calculateDiffPercentScore($curr['traffic'], $prevYear['traffic']) : 3;
+        
+        $currEng = (function($t) { $parts = explode(':', $t); return count($parts) < 2 ? 0 : ($parts[0] * 60) + $parts[1]; })($curr['engagement']);
+        $prevEng = $prevYear ? (function($t) { $parts = explode(':', $t); return count($parts) < 2 ? 0 : ($parts[0] * 60) + $parts[1]; })($prevYear['engagement']) : 0;
+        $engagementScore = $prevYear ? calculateDiffPercentScore($currEng, $prevEng) : 3;
+        $convScore = calculateConversionScore($curr['leads'], $curr['traffic']);
+
+        $avg = ($speedScore + $leadsScore + $rankingScore + $trafficScore + $engagementScore + $convScore) / 6;
+        list($label, $class) = getHealthLabel($avg);
+
+        $sql = "INSERT INTO campaign_assessments 
+            (metrics_row_id, record_id, campaign_code, assessment_date, speed_score, leads_score, rankings_score, traffic_score, engagement_score, conversion_score, health_score, assessment_label, status_class)
+            VALUES 
+            (:mid, :rid, :c, :d, :s, :l, :r, :t, :e, :conv, :h, :lbl, :cls)
+            ON DUPLICATE KEY UPDATE 
+            speed_score=:s, leads_score=:l, rankings_score=:r, traffic_score=:t, engagement_score=:e, conversion_score=:conv, health_score=:h, assessment_label=:lbl, status_class=:cls";
+        
+        $stmtIns = $pdo->prepare($sql);
+        $stmtIns->execute([
+            ':mid' => $curr['id'],
+            ':rid' => $campaign . ' : ' . date('F-Y', strtotime($curr['month_yr'])),
+            ':c' => $campaign,
+            ':d' => date('Y-m-d', strtotime($curr['month_yr'])),
+            ':s' => $speedScore, ':l' => $leadsScore, ':r' => $rankingScore, ':t' => $trafficScore, ':e' => $engagementScore, ':conv' => $convScore, ':h' => $avg, ':lbl' => $label, ':cls' => $class
+        ]);
+
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+if ($action === 'update_assessment_cell') {
+    $id = $_POST['id'] ?? null;
+    $column = $_POST['column'] ?? null;
+    $value = $_POST['value'] ?? null;
+
+    $allowed = ['speed_score', 'leads_score', 'rankings_score', 'traffic_score', 'engagement_score', 'conversion_score'];
+    if (!$id || !in_array($column, $allowed)) {
+        echo json_encode(['success' => false, 'message' => 'Invalid update']);
+        exit;
+    }
+
+    try {
+        // Update the cell
+        $stmt = $pdo->prepare("UPDATE campaign_assessments SET $column = :v WHERE id = :id");
+        $stmt->execute([':v' => $value, ':id' => $id]);
+
+        // Recalculate health score & label
+        $stmtRow = $pdo->prepare("SELECT * FROM campaign_assessments WHERE id = :id");
+        $stmtRow->execute([':id' => $id]);
+        $row = $stmtRow->fetch();
+        
+        $avg = ($row['speed_score'] + $row['leads_score'] + $row['rankings_score'] + $row['traffic_score'] + $row['engagement_score'] + $row['conversion_score']) / 6;
+        require_once 'functions.php';
+        list($label, $class) = getHealthLabel($avg);
+
+        $stmtUpd = $pdo->prepare("UPDATE campaign_assessments SET health_score = :h, assessment_label = :l, status_class = :c WHERE id = :id");
+        $stmtUpd->execute([':h' => $avg, ':l' => $label, ':c' => $class, ':id' => $id]);
+
+        echo json_encode(['success' => true, 'health' => number_format($avg, 2), 'label' => $label, 'class' => $class]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
 
 echo json_encode(['success' => false, 'message' => 'Invalid action']);
+?>
