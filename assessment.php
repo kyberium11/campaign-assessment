@@ -19,6 +19,13 @@ foreach ($allMetrics as $m) {
     $lookup[$m['campaign']][$dateKey] = $m;
 }
 
+// Note: engagement is currently a string 0:00. Convert to seconds for calculation.
+function timeToSeconds($t) {
+    $parts = explode(':', $t);
+    if (count($parts) < 2) return 0;
+    return ($parts[0] * 60) + $parts[1];
+}
+
 $results = [];
 
 // Process assessment for each record
@@ -57,14 +64,6 @@ foreach ($allMetrics as $curr) {
     $trafficScore = 3;
     if ($prevYear) {
         $trafficScore = calculateDiffPercentScore($curr['traffic'], $prevYear['traffic']);
-    }
-
-    // 5. Engagement Score
-    // Note: engagement is currently a string 0:00. Convert to seconds for calculation.
-    function timeToSeconds($t) {
-        $parts = explode(':', $t);
-        if (count($parts) < 2) return 0;
-        return ($parts[0] * 60) + $parts[1];
     }
     
     $engagementScore = 3;
