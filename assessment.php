@@ -4,6 +4,7 @@ require_once 'functions.php';
 
 $view = $_GET['view'] ?? 'current'; // current, previous, all, campaign
 $campaign_filter = $_GET['campaign'] ?? '';
+$is_embedded = isset($_GET['embed']) && $_GET['embed'] == '1';
 
 $sql = "SELECT * FROM campaign_assessments";
 $params = [];
@@ -46,8 +47,9 @@ try {
     <title>Campaign Assessment</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body class="assessment-page">
+<body class="assessment-page <?= $is_embedded ? 'embedded' : '' ?>">
 
+<?php if (!$is_embedded): ?>
     <nav class="tabs">
         <a href="index.php" class="tab-item">Campaign Metrics</a>
         <a href="assessment.php" class="tab-item active">Campaign Assessment (Automated)</a>
@@ -72,6 +74,7 @@ try {
             <button class="btn-add" id="btnAddAssessment" style="margin-left:auto;">+ Add Assessment</button>
         </div>
     </div>
+<?php endif; ?>
 
     <div class="table-container" style="margin: 20px; border-radius: 6px;">
         <table id="assessmentTable">

@@ -175,30 +175,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Embed Logic ---
-    const btnGetEmbed = document.getElementById('btnGetEmbed');
-    const embedModal = document.getElementById('embedModal');
-    const btnCloseEmbedModal = document.getElementById('btnCloseEmbedModal');
-    const embedCodeArea = document.getElementById('embedCodeArea');
-
-    if (btnGetEmbed) {
-        btnGetEmbed.addEventListener('click', () => {
-            const currentUrl = window.location.href.split('?')[0];
-            const embedUrl = currentUrl + '?embed=1';
-            const embedCode = `<iframe src="${embedUrl}" width="100%" height="600px" frameborder="0"></iframe>`;
-            embedCodeArea.value = embedCode;
-            embedModal.classList.add('open');
-        });
-    }
-
-    if (btnCloseEmbedModal) {
-        btnCloseEmbedModal.addEventListener('click', () => {
-            embedModal.classList.remove('open');
-        });
-    }
-
-    window.copyEmbedCode = function () {
-        embedCodeArea.select();
-        document.execCommand('copy');
-        alert('Embed code copied to clipboard!');
-    };
 });

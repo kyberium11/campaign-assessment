@@ -135,21 +135,6 @@ try {
                 </div>
             </form>
         </div>
-    <!-- Embed Code Modal -->
-    <div class="modal-overlay" id="embedModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>Embed This Table</h2>
-                <button class="modal-close" id="btnCloseEmbedModal">&times;</button>
-            </div>
-            <p>Copy the code below to embed this table into your website:</p>
-            <textarea id="embedCodeArea" readonly style="width: 100%; height: 100px; padding: 10px; font-family: monospace; font-size: 12px; margin-top: 10px; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
-            <div class="modal-footer">
-                <button class="btn-add" onclick="copyEmbedCode()">Copy Code</button>
-            </div>
-        </div>
-    </div>
-
     <script src="script.js"></script>
 </body>
 </html>
