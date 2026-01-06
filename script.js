@@ -180,15 +180,141 @@ document.addEventListener('DOMContentLoaded', () => {
     const addRowZone = document.getElementById('addRowZone');
     const tbody = metricsTable ? metricsTable.querySelector('tbody') : null;
 
+    // Column definitions for new row
+    const columns = [
+        { name: 'metrics_id', label: 'Metrics_ID', type: 'text' },
+        { name: 'record_id', label: 'Record ID', type: 'display' }, // Auto-generated, not editable
+        { name: 'campaign', label: 'Campaign', type: 'text' },
+        { name: 'month_yr', label: 'Month & Yr', type: 'text', placeholder: 'MM/DD/YYYY' },
+        { name: 'speed_mobile', label: 'Mobile %', type: 'number', class: 'col-percentage' },
+        { name: 'speed_desktop', label: 'Desktop %', type: 'number', class: 'col-percentage' },
+        { name: 'speed_avg', label: 'Avg %', type: 'number', class: 'col-percentage' },
+        { name: 'leads', label: 'Leads', type: 'number', class: 'col-number' },
+        { name: 'ranking', label: 'Ranking', type: 'number', class: 'col-number' },
+        { name: 'traffic', label: 'Traffic', type: 'number', class: 'col-number' },
+        { name: 'engagement', label: 'Engagement', type: 'text', class: 'col-center', placeholder: '0:00' },
+        { name: 'conversion', label: 'Conversion', type: 'number', class: 'col-decimal', step: '0.1' }
+    ];
+
     // Double-click on add row zone to add a new empty row
-    if (addRowZone) {
+    if (addRowZone && tbody) {
         addRowZone.addEventListener('dblclick', () => {
-            // Open the add modal
-            if (modal) {
-                addForm.reset();
-                modal.classList.add('open');
-            }
+            createEmptyEditableRow();
         });
+    }
+
+    function createEmptyEditableRow() {
+        // Check if there's already a new row being edited
+        if (document.querySelector('.new-editable-row')) {
+            document.querySelector('.new-editable-row input')?.focus();
+            return;
+        }
+
+        const tr = document.createElement('tr');
+        tr.className = 'new-editable-row new-row';
+        tr.dataset.isNew = 'true';
+
+        columns.forEach((col, idx) => {
+            const td = document.createElement('td');
+            td.className = col.class || '';
+
+            if (col.type === 'display') {
+                // Record ID - will be auto-generated
+                td.style.color = '#8c959f';
+                td.style.fontSize = '11px';
+                td.innerHTML = '<em>Auto</em>';
+            } else {
+                const input = document.createElement('input');
+                input.type = col.type === 'number' ? 'text' : 'text'; // Use text for flexible input
+                input.name = col.name;
+                input.placeholder = col.placeholder || col.label;
+                input.className = 'new-row-input';
+                input.style.cssText = 'width: 100%; padding: 6px 8px; border: 1px solid #d0d7de; border-radius: 4px; font-size: 12px; box-sizing: border-box;';
+
+                // Tab navigation between inputs
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        saveNewRow(tr);
+                    } else if (e.key === 'Escape') {
+                        tr.remove();
+                    }
+                });
+
+                td.appendChild(input);
+            }
+
+            tr.appendChild(td);
+        });
+
+        // Add save/cancel buttons cell
+        const actionTd = document.createElement('td');
+        actionTd.style.cssText = 'white-space: nowrap;';
+        actionTd.innerHTML = `
+            <button class="btn-save-row" style="background: #1f883d; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; margin-right: 4px;">Save</button>
+            <button class="btn-cancel-row" style="background: #f6f8fa; color: #24292f; border: 1px solid #d0d7de; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;">✕</button>
+        `;
+        tr.appendChild(actionTd);
+
+        actionTd.querySelector('.btn-save-row').addEventListener('click', () => saveNewRow(tr));
+        actionTd.querySelector('.btn-cancel-row').addEventListener('click', () => tr.remove());
+
+        tbody.appendChild(tr);
+
+        // Focus first input
+        tr.querySelector('input')?.focus();
+
+        // Scroll to bottom
+        tableContainer.scrollTop = tableContainer.scrollHeight;
+    }
+
+    function saveNewRow(tr) {
+        const inputs = tr.querySelectorAll('input');
+        const data = {};
+
+        inputs.forEach(input => {
+            data[input.name] = input.value;
+        });
+
+        // Validate required field
+        if (!data.metrics_id || !data.metrics_id.trim()) {
+            showToast('Metrics ID is required', 'error');
+            tr.querySelector('input[name="metrics_id"]')?.focus();
+            return;
+        }
+
+        // Send to API
+        const formData = new FormData();
+        formData.append('action', 'create_row');
+
+        Object.keys(data).forEach(key => {
+            formData.append(key, data[key]);
+        });
+
+        const saveBtn = tr.querySelector('.btn-save-row');
+        saveBtn.textContent = '...';
+        saveBtn.disabled = true;
+
+        fetch('api.php', {
+            method: 'POST',
+            body: formData
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    showToast('Row saved successfully', 'success');
+                    setTimeout(() => window.location.reload(), 1000);
+                } else {
+                    showToast('Error: ' + result.message, 'error');
+                    saveBtn.textContent = 'Save';
+                    saveBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                showToast('Network error', 'error');
+                saveBtn.textContent = 'Save';
+                saveBtn.disabled = false;
+            });
     }
 
     // Listen for paste events on the table container

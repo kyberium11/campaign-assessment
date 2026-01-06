@@ -445,3 +445,18 @@ tr.new-row {
         opacity: 1;
     }
 }
+
+/* New editable row */
+.new-editable-row {
+    background: #fffbeb !important;
+}
+
+.new-editable-row td {
+    padding: 4px 6px !important;
+}
+
+.new-editable-row input.new-row-input:focus {
+    border-color: #0969da;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.15);
+}
