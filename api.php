@@ -377,5 +377,28 @@ if ($action === 'update_assessment_cell') {
     exit;
 }
 
+if ($action === 'delete_assessment') {
+    $id = $_POST['id'] ?? null;
+
+    if (!$id) {
+        echo json_encode(['success' => false, 'message' => 'ID required']);
+        exit;
+    }
+
+    try {
+        $stmt = $pdo->prepare("DELETE FROM campaign_assessments WHERE id = :id");
+        $stmt->execute([':id' => $id]);
+        
+        if ($stmt->rowCount() > 0) {
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Assessment not found']);
+        }
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
 echo json_encode(['success' => false, 'message' => 'Invalid action']);
 ?>

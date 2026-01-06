@@ -92,6 +92,7 @@ try {
         <table id="assessmentTable">
             <thead>
                 <tr>
+                    <th class="col-delete"></th>
                     <th>Record ID</th>
                     <th>Campaign Code</th>
                     <th>Date</th>
@@ -108,6 +109,7 @@ try {
             <tbody>
                 <?php foreach ($results as $res): ?>
                 <tr data-id="<?= $res['id'] ?>">
+                    <td class="col-delete"><button class="btn-delete-row" title="Delete row">−</button></td>
                     <td style="color: #57606a; font-size: 11px;"><?= htmlspecialchars($res['record_id']) ?></td>
                     <td><span class="campaign-badge"><?= htmlspecialchars($res['campaign_code']) ?></span></td>
                     <td><?= date('M d, Y', strtotime($res['assessment_date'])) ?></td>
