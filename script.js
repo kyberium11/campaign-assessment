@@ -6,6 +6,50 @@ document.addEventListener('DOMContentLoaded', () => {
     const addForm = document.getElementById('addForm');
     const btnSaveAndKeep = document.getElementById('btnSaveAndKeep');
 
+    // --- Delete Row ---
+    table.addEventListener('click', (e) => {
+        const deleteBtn = e.target.closest('.btn-delete-row');
+        if (!deleteBtn) return;
+
+        const row = deleteBtn.closest('tr');
+        const id = row.dataset.id;
+        const metricsId = row.querySelector('td:nth-child(2)')?.innerText || 'this row';
+
+        if (!confirm(`Delete "${metricsId}"?`)) return;
+
+        // Send delete request
+        const formData = new FormData();
+        formData.append('action', 'delete_row');
+        formData.append('id', id);
+
+        deleteBtn.textContent = '...';
+        deleteBtn.disabled = true;
+
+        fetch('api.php', {
+            method: 'POST',
+            body: formData
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) {
+                    // Fade out and remove row
+                    row.style.transition = 'opacity 0.3s';
+                    row.style.opacity = '0';
+                    setTimeout(() => row.remove(), 300);
+                } else {
+                    alert('Error: ' + result.message);
+                    deleteBtn.textContent = '−';
+                    deleteBtn.disabled = false;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                alert('Network error');
+                deleteBtn.textContent = '−';
+                deleteBtn.disabled = false;
+            });
+    });
+
     // --- Inline Editing ---
     table.addEventListener('dblclick', (e) => {
         const cell = e.target.closest('td.editable');

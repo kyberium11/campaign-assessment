@@ -38,6 +38,7 @@ try {
         <table id="metricsTable">
             <thead>
                 <tr>
+                    <th class="col-delete"></th>
                     <th>Metrics_ID</th>
                     <th>Record ID</th>
                     <th>Campaign</th>
@@ -55,6 +56,7 @@ try {
             <tbody>
                 <?php foreach ($metrics as $row): ?>
                 <tr data-id="<?= $row['id'] ?>">
+                    <td class="col-delete"><button class="btn-delete-row" title="Delete row">−</button></td>
                     <td class="editable" data-col="metrics_id"><?= htmlspecialchars($row['metrics_id']) ?></td>
                     <td class="col-center" style="font-size: 11px; color: #57606a;">
                         <?= htmlspecialchars($row['campaign']) ?> : <?= date('F-Y', strtotime($row['month_yr'])) ?>

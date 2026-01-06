@@ -91,6 +91,45 @@ tbody tr:hover {
     background-color: var(--row-hover-bg);
 }
 
+/* Delete button column */
+.col-delete {
+    width: 24px;
+    min-width: 24px;
+    max-width: 24px;
+    padding: 0 !important;
+    text-align: center;
+    border-right: none !important;
+}
+
+th.col-delete {
+    background: var(--header-bg);
+}
+
+.btn-delete-row {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: transparent;
+    color: #cf222e;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1;
+    transition: all 0.15s;
+}
+
+.btn-delete-row:hover {
+    background: #ffebe9;
+}
+
+tbody tr:hover .btn-delete-row {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 /* Editable cells */
 td.editable {
     cursor: cell;
