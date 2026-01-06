@@ -6,6 +6,9 @@ $view = $_GET['view'] ?? 'current'; // current, previous, all, campaign
 $campaign_filter = $_GET['campaign'] ?? '';
 $is_embedded = isset($_GET['embed']) && $_GET['embed'] == '1';
 
+// Track if we fell back from current month
+$fallback_to_all = false;
+
 $sql = "SELECT * FROM campaign_assessments";
 $params = [];
 
@@ -24,6 +27,14 @@ try {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $results = $stmt->fetchAll();
+
+    // Fallback: If current month view returns no results, show all data instead
+    if ($view === 'current' && empty($results)) {
+        $fallback_to_all = true;
+        $sqlAll = "SELECT * FROM campaign_assessments ORDER BY assessment_date DESC";
+        $stmtAll = $pdo->query($sqlAll);
+        $results = $stmtAll->fetchAll();
+    }
 
     // Get unique campaigns for dropdown
     $campStmt = $pdo->query("SELECT DISTINCT campaign_code FROM campaign_assessments ORDER BY campaign_code");
@@ -56,9 +67,9 @@ try {
 
     <div class="sub-tabs">
         <div class="container">
-            <a href="?view=current" class="<?= $view === 'current' ? 'active' : '' ?>">Current Month</a>
+            <a href="?view=current" class="<?= ($view === 'current' && !$fallback_to_all) ? 'active' : '' ?>">Current Month</a>
             <a href="?view=previous" class="<?= $view === 'previous' ? 'active' : '' ?>">Previous Month</a>
-            <a href="?view=all" class="<?= $view === 'all' ? 'active' : '' ?>">All Data</a>
+            <a href="?view=all" class="<?= ($view === 'all' || $fallback_to_all) ? 'active' : '' ?>">All Data<?= $fallback_to_all ? ' (No current month data)' : '' ?></a>
             <div class="campaign-selector">
                 <form method="GET" style="display:inline;">
                     <input type="hidden" name="view" value="campaign">
