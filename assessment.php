@@ -6,35 +6,38 @@ $view = $_GET['view'] ?? 'current'; // current, previous, all, campaign
 $campaign_filter = $_GET['campaign'] ?? '';
 $is_embedded = isset($_GET['embed']) && $_GET['embed'] == '1';
 
-// Track if we fell back from current month
-$fallback_to_all = false;
-
-$sql = "SELECT * FROM campaign_assessments";
-$params = [];
-
-if ($view === 'current') {
-    $sql .= " WHERE DATE_FORMAT(assessment_date, '%Y-%m') = DATE_FORMAT(CURRENT_DATE, '%Y-%m')";
-} elseif ($view === 'previous') {
-    $sql .= " WHERE DATE_FORMAT(assessment_date, '%Y-%m') = DATE_FORMAT(DATE_SUB(CURRENT_DATE, INTERVAL 1 MONTH), '%Y-%m')";
-} elseif ($view === 'campaign' && !empty($campaign_filter)) {
-    $sql .= " WHERE campaign_code = :c";
-    $params[':c'] = $campaign_filter;
-}
-
-$sql .= " ORDER BY assessment_date DESC";
-
 try {
+    // First, find the most recent month and previous month from the data
+    $recentMonthsStmt = $pdo->query("
+        SELECT DISTINCT DATE_FORMAT(assessment_date, '%Y-%m') as month_key 
+        FROM campaign_assessments 
+        ORDER BY month_key DESC 
+        LIMIT 2
+    ");
+    $recentMonths = $recentMonthsStmt->fetchAll(PDO::FETCH_COLUMN);
+    
+    $mostRecentMonth = $recentMonths[0] ?? null;  // e.g., "2024-12"
+    $previousMonth = $recentMonths[1] ?? null;    // e.g., "2024-11"
+
+    $sql = "SELECT * FROM campaign_assessments";
+    $params = [];
+
+    if ($view === 'current' && $mostRecentMonth) {
+        $sql .= " WHERE DATE_FORMAT(assessment_date, '%Y-%m') = :month";
+        $params[':month'] = $mostRecentMonth;
+    } elseif ($view === 'previous' && $previousMonth) {
+        $sql .= " WHERE DATE_FORMAT(assessment_date, '%Y-%m') = :month";
+        $params[':month'] = $previousMonth;
+    } elseif ($view === 'campaign' && !empty($campaign_filter)) {
+        $sql .= " WHERE campaign_code = :c";
+        $params[':c'] = $campaign_filter;
+    }
+
+    $sql .= " ORDER BY assessment_date DESC";
+
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $results = $stmt->fetchAll();
-
-    // Fallback: If current month view returns no results, show all data instead
-    if ($view === 'current' && empty($results)) {
-        $fallback_to_all = true;
-        $sqlAll = "SELECT * FROM campaign_assessments ORDER BY assessment_date DESC";
-        $stmtAll = $pdo->query($sqlAll);
-        $results = $stmtAll->fetchAll();
-    }
 
     // Get unique campaigns for dropdown
     $campStmt = $pdo->query("SELECT DISTINCT campaign_code FROM campaign_assessments ORDER BY campaign_code");
@@ -67,9 +70,9 @@ try {
 
     <div class="sub-tabs">
         <div class="container">
-            <a href="?view=current" class="<?= ($view === 'current' && !$fallback_to_all) ? 'active' : '' ?>">Current Month</a>
-            <a href="?view=previous" class="<?= $view === 'previous' ? 'active' : '' ?>">Previous Month</a>
-            <a href="?view=all" class="<?= ($view === 'all' || $fallback_to_all) ? 'active' : '' ?>">All Data<?= $fallback_to_all ? ' (No current month data)' : '' ?></a>
+            <a href="?view=current" class="<?= $view === 'current' ? 'active' : '' ?>"><?= $mostRecentMonth ? date('M Y', strtotime($mostRecentMonth . '-01')) : 'Current Month' ?></a>
+            <a href="?view=previous" class="<?= $view === 'previous' ? 'active' : '' ?>"><?= $previousMonth ? date('M Y', strtotime($previousMonth . '-01')) : 'Previous Month' ?></a>
+            <a href="?view=all" class="<?= $view === 'all' ? 'active' : '' ?>">All Data</a>
             <div class="campaign-selector">
                 <form method="GET" style="display:inline;">
                     <input type="hidden" name="view" value="campaign">
