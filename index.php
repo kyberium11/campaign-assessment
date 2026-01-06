@@ -29,6 +29,7 @@ try {
         <div class="header-actions">
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
             <button class="btn-secondary" id="btnImport">Import CSV</button>
+            <button class="btn-secondary" id="btnPaste" title="Paste data copied from Excel/Google Sheets">📋 Paste from Spreadsheet</button>
             <button class="btn-add" id="btnAdd">+ Add Data</button>
         </div>
     </header>
@@ -135,6 +136,45 @@ try {
                 </div>
             </form>
         </div>
+    </div>
+
+    <!-- Paste from Spreadsheet Modal -->
+    <div class="modal-overlay" id="pasteModal">
+        <div class="modal" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>📋 Paste from Spreadsheet</h2>
+                <button class="modal-close" id="btnClosePasteModal">&times;</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="margin-bottom: 10px; color: #57606a; font-size: 13px;">
+                    Copy cells from Excel or Google Sheets and paste below. Expected column order:
+                </p>
+                <div style="background: #f6f8fa; padding: 10px; border-radius: 4px; margin-bottom: 15px; font-family: monospace; font-size: 12px; overflow-x: auto;">
+                    Metrics_ID | Campaign | Month/Yr | Mobile% | Desktop% | Avg% | Leads | Ranking | Traffic | Engagement | Conversion
+                </div>
+                <textarea id="pasteArea" placeholder="Paste your spreadsheet data here (Ctrl+V)..." 
+                    style="width: 100%; height: 150px; font-family: monospace; font-size: 12px; padding: 10px; border: 2px dashed #d0d7de; border-radius: 6px; resize: vertical;"></textarea>
+                <div id="pastePreview" style="margin-top: 15px; max-height: 200px; overflow-y: auto; display: none;">
+                    <p style="font-weight: 600; margin-bottom: 8px;">Preview (<span id="previewCount">0</span> rows):</p>
+                    <table style="width: 100%; font-size: 11px; border-collapse: collapse;" id="previewTable">
+                        <thead style="background: #f6f8fa;">
+                            <tr>
+                                <th style="padding: 4px; border: 1px solid #ddd;">Metrics ID</th>
+                                <th style="padding: 4px; border: 1px solid #ddd;">Campaign</th>
+                                <th style="padding: 4px; border: 1px solid #ddd;">Month</th>
+                            </tr>
+                        </thead>
+                        <tbody id="previewBody"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnClearPaste">Clear</button>
+                <button type="button" class="btn-add" id="btnImportPaste">Import Data</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js?v=<?= filemtime('script.js') ?>"></script>
 </body>
 </html>

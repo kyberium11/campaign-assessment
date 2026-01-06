@@ -167,6 +167,87 @@ if ($action === 'import_csv') {
     exit;
 }
 
+// Handle pasted spreadsheet data
+if ($action === 'import_paste') {
+    $rawData = $_POST['data'] ?? '';
+    $rows = json_decode($rawData, true);
+
+    if (!is_array($rows) || empty($rows)) {
+        echo json_encode(['success' => false, 'message' => 'No valid data received']);
+        exit;
+    }
+
+    $imported = 0;
+    $skipped = 0;
+    $errors = 0;
+
+    $stmtCheck = $pdo->prepare("SELECT COUNT(*) FROM campaign_metrics WHERE metrics_id = :metrics_id");
+    
+    $sqlInsert = "INSERT INTO campaign_metrics 
+        (metrics_id, campaign, month_yr, speed_mobile, speed_desktop, speed_avg, leads, ranking, traffic, engagement, conversion) 
+        VALUES 
+        (:metrics_id, :campaign, :month_yr, :speed_mobile, :speed_desktop, :speed_avg, :leads, :ranking, :traffic, :engagement, :conversion)";
+    $stmtInsert = $pdo->prepare($sqlInsert);
+
+    foreach ($rows as $row) {
+        $metrics_id = trim($row['metrics_id'] ?? '');
+        
+        if (empty($metrics_id)) {
+            continue;
+        }
+
+        // Check for duplicate
+        $stmtCheck->execute([':metrics_id' => $metrics_id]);
+        if ($stmtCheck->fetchColumn() > 0) {
+            $skipped++;
+            continue;
+        }
+
+        try {
+            // Parse values - similar to CSV import
+            $campaign = $row['campaign'] ?? '';
+            $month_yr = $row['month_yr'] ?? '';
+            
+            // Handle percentages (remove % and divide by 100)
+            $speed_mobile  = floatval(str_replace(['%', ' '], '', $row['speed_mobile'] ?? '0')) / 100;
+            $speed_desktop = floatval(str_replace(['%', ' '], '', $row['speed_desktop'] ?? '0')) / 100;
+            $speed_avg     = floatval(str_replace(['%', ' '], '', $row['speed_avg'] ?? '0')) / 100;
+            
+            // Handle numbers (remove commas)
+            $leads    = intval(str_replace(',', '', $row['leads'] ?? '0'));
+            $ranking  = intval(str_replace(',', '', $row['ranking'] ?? '0'));
+            $traffic  = intval(str_replace(',', '', $row['traffic'] ?? '0'));
+            
+            $engagement = $row['engagement'] ?? '0:00';
+            $conversion = floatval($row['conversion'] ?? 0);
+
+            $stmtInsert->execute([
+                ':metrics_id' => $metrics_id,
+                ':campaign' => $campaign,
+                ':month_yr' => $month_yr,
+                ':speed_mobile' => $speed_mobile,
+                ':speed_desktop' => $speed_desktop,
+                ':speed_avg' => $speed_avg,
+                ':leads' => $leads,
+                ':ranking' => $ranking,
+                ':traffic' => $traffic,
+                ':engagement' => $engagement,
+                ':conversion' => $conversion,
+            ]);
+            $imported++;
+
+        } catch (Exception $e) {
+            $errors++;
+        }
+    }
+
+    echo json_encode([
+        'success' => true, 
+        'message' => "Paste import complete. Imported: $imported, Skipped (Duplicate): $skipped, Errors: $errors"
+    ]);
+    exit;
+}
+
 // --- Assessment Actions ---
 
 if ($action === 'create_assessment') {
