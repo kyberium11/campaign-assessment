@@ -11,6 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const deleteBtn = e.target.closest('.btn-delete-row');
         if (!deleteBtn) return;
 
+        const row = deleteBtn.closest('tr');
+        const id = row.dataset.id;
         const metricsId = row.querySelector('td:nth-child(2)')?.innerText || 'this row';
         
         showConfirm(`Delete "${metricsId}"?`, () => {
@@ -115,10 +117,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Modal Logic ---
-    btnAdd.addEventListener('click', () => {
-        addForm.reset();
-        modal.classList.add('open');
-    });
+    if (btnAdd) {
+        btnAdd.addEventListener('click', () => {
+            addForm.reset();
+            modal.classList.add('open');
+        });
+    }
 
     btnCloseModal.addEventListener('click', () => {
         modal.classList.remove('open');
@@ -177,11 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnImport = document.getElementById('btnImport');
     const csvInput = document.getElementById('csvInput');
 
-    btnImport.addEventListener('click', () => {
-        csvInput.click();
-    });
+    if (btnImport) {
+        btnImport.addEventListener('click', () => {
+            csvInput.click();
+        });
+    }
 
-    csvInput.addEventListener('change', () => {
+    if (csvInput) {
+        csvInput.addEventListener('change', () => {
         if (csvInput.files.length === 0) return;
 
         const file = csvInput.files[0];
@@ -214,7 +221,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 btnImport.disabled = false;
                 csvInput.value = '';
             });
-    });
+        });
+    }
 
     // --- Run Assessment ---
     const btnRunAssessment = document.getElementById('btnRunAssessment');

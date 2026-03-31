@@ -145,6 +145,7 @@ try {
                 </div>
             </form>
     </div>
+    </div>
 
     <!-- Confirmation Modal -->
     <div class="modal-overlay" id="confirmModal">
