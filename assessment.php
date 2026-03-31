@@ -50,7 +50,7 @@ try {
     $availableMetrics = $metricsStmt->fetchAll();
 
     // Get unique Month & Yr values for assessment select
-    $stmtMonthsList = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY month_yr DESC");
+    $stmtMonthsList = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY STR_TO_DATE(month_yr, '%m/%d/%Y') DESC");
     $uniqueMonthsList = $stmtMonthsList->fetchAll(PDO::FETCH_COLUMN);
 
 } catch (PDOException $e) {

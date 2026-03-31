@@ -8,7 +8,7 @@ try {
     $metrics = $stmt->fetchAll();
     
     // Get unique Month & Yr values for assessment select
-    $stmtMonths = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY month_yr DESC");
+    $stmtMonths = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY STR_TO_DATE(month_yr, '%m/%d/%Y') DESC");
     $uniqueMonths = $stmtMonths->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
     die("Error fetching data: " . $e->getMessage());
