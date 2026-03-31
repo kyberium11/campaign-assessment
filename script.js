@@ -254,8 +254,52 @@ document.addEventListener('DOMContentLoaded', () => {
                         showAlert('Network error');
                     })
                     .finally(() => {
-                        btnRunAssessment.textContent = 'Run Automated Assessment';
+                        btnRunAssessment.textContent = 'Run All Assessment';
                         btnRunAssessment.disabled = false;
+                    });
+            });
+        });
+    }
+
+    const btnRunMonthAssessment = document.getElementById('btnRunMonthAssessment');
+    const runMonthSelect = document.getElementById('runMonthSelect');
+    if (btnRunMonthAssessment) {
+        btnRunMonthAssessment.addEventListener('click', () => {
+            const selectedMonth = runMonthSelect.value;
+            if (!selectedMonth) {
+                showAlert('Please select a Month & Yr first.');
+                return;
+            }
+
+            showConfirm(`Run automated assessment for ${selectedMonth}?`, () => {
+                btnRunMonthAssessment.textContent = 'Running...';
+                btnRunMonthAssessment.disabled = true;
+
+                const formData = new FormData();
+                formData.append('action', 'run_month_assessment');
+                formData.append('month_yr', selectedMonth);
+
+                fetch('api.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(r => r.json())
+                    .then(result => {
+                        if (result.success) {
+                            showAlert(result.message, () => {
+                                window.location.href = 'assessment.php';
+                            });
+                        } else {
+                            showAlert('Error: ' + result.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showAlert('Network error');
+                    })
+                    .finally(() => {
+                        btnRunMonthAssessment.textContent = 'Run for Selected Month';
+                        btnRunMonthAssessment.disabled = false;
                     });
             });
         });

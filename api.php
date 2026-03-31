@@ -252,7 +252,6 @@ if ($action === 'create_assessment') {
 
     try {
         require_once 'functions.php';
-        
         $stmt = $pdo->prepare("SELECT * FROM campaign_metrics WHERE id = :id");
         $stmt->execute([':id' => $metrics_id]);
         $curr = $stmt->fetch();
@@ -262,67 +261,7 @@ if ($action === 'create_assessment') {
             exit;
         }
 
-        // Get all metrics for lookup
-        $metricsStmt = $pdo->query("SELECT * FROM campaign_metrics");
-        $allMetrics = $metricsStmt->fetchAll();
-        $lookup = [];
-        foreach ($allMetrics as $m) {
-            $lookup[$m['metrics_id']] = $m;
-        }
-
-        $campaign = $curr['campaign'];
-        $dateStr = $curr['month_yr'];
-        
-        $prevMonthID = getPrevMonthID($campaign, $dateStr);
-        $prevYearID = getPrevYearID($campaign, $dateStr);
-
-        $prevMonth = $lookup[$prevMonthID] ?? null;
-        $prevYear = $lookup[$prevYearID] ?? null;
-
-        $curData = [
-            $curr['speed_avg'],
-            $curr['leads'],
-            $curr['ranking'],
-            $curr['traffic'],
-            timeToSeconds($curr['engagement']),
-            $curr['conversion']
-        ];
-
-        $prevData = [
-            $prevYear ? $prevYear['speed_avg'] : null,
-            $prevYear ? $prevYear['leads'] : null,
-            $prevMonth ? $prevMonth['ranking'] : null,
-            $prevYear ? $prevYear['traffic'] : null,
-            $prevYear ? timeToSeconds($prevYear['engagement']) : null,
-            $prevYear ? $prevYear['conversion'] : null
-        ];
-
-        $speed = between(round($curData[0] * 100), 49, 50, 63, 64, 76, 77, 89, 90);
-        $leads = between(comparison($curData[1], $prevData[1]), -50, -49, -16, -15, 0, 1, 10, 11);
-        $rank  = between(comparison($curData[2], $prevData[2]), -50, -49, -6, -5, 5, 6, 20, 21);
-        $traffic = between(comparison($curData[3], $prevData[3]), -50, -49, -16, -15, 0, 1, 10, 11);
-        $engagement = between($curData[4], 30, 31, 60, 61, 90, 91, 120, 121);
-        $conversion = between(comparison($curData[5], $prevData[5]), 1, 1.1, 2, 2.1, 3, 3.1, 5, 5.5);
-
-        $avg = ($speed + $leads + $rank + $traffic + $engagement + $conversion) / 6;
-        list($label, $class) = getHealthLabel($avg);
-
-        $sql = "INSERT INTO campaign_assessments 
-            (metrics_row_id, record_id, campaign_code, assessment_date, speed_score, leads_score, rankings_score, traffic_score, engagement_score, conversion_score, health_score, assessment_label, status_class)
-            VALUES 
-            (:mid, :rid, :c, :d, :s, :l, :r, :t, :e, :conv, :h, :lbl, :cls)
-            ON DUPLICATE KEY UPDATE 
-            speed_score=:s, leads_score=:l, rankings_score=:r, traffic_score=:t, engagement_score=:e, conversion_score=:conv, health_score=:h, assessment_label=:lbl, status_class=:cls";
-        
-        $stmtIns = $pdo->prepare($sql);
-        $stmtIns->execute([
-            ':mid' => $curr['id'],
-            ':rid' => $campaign . ' : ' . date('F-Y', strtotime($dateStr)),
-            ':c' => $campaign,
-            ':d' => date('Y-m-d', strtotime($dateStr)),
-            ':s' => $speed, ':l' => $leads, ':r' => $rank, ':t' => $traffic, ':e' => $engagement, ':conv' => $conversion, ':h' => $avg, ':lbl' => $label, ':cls' => $class
-        ]);
-
+        runAutomatedAssessmentForMetrics([$curr], $pdo);
         echo json_encode(['success' => true]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
@@ -333,73 +272,36 @@ if ($action === 'create_assessment') {
 if ($action === 'run_full_assessment') {
     try {
         require_once 'functions.php';
-        
         $stmt = $pdo->query("SELECT * FROM campaign_metrics");
         $allMetrics = $stmt->fetchAll();
-        
-        $lookup = [];
-        foreach ($allMetrics as $m) {
-            $lookup[$m['metrics_id']] = $m;
-        }
-
-        $sql = "INSERT INTO campaign_assessments 
-            (metrics_row_id, record_id, campaign_code, assessment_date, speed_score, leads_score, rankings_score, traffic_score, engagement_score, conversion_score, health_score, assessment_label, status_class)
-            VALUES 
-            (:mid, :rid, :c, :d, :s, :l, :r, :t, :e, :conv, :h, :lbl, :cls)
-            ON DUPLICATE KEY UPDATE 
-            speed_score=:s, leads_score=:l, rankings_score=:r, traffic_score=:t, engagement_score=:e, conversion_score=:conv, health_score=:h, assessment_label=:lbl, status_class=:cls";
-        $stmtIns = $pdo->prepare($sql);
-
-        $count = 0;
-        foreach ($allMetrics as $m) {
-            $campaign = $m['campaign'];
-            $dateStr = $m['month_yr'];
-            
-            $prevMonthID = getPrevMonthID($campaign, $dateStr);
-            $prevYearID = getPrevYearID($campaign, $dateStr);
-
-            $prevMonth = $lookup[$prevMonthID] ?? null;
-            $prevYear = $lookup[$prevYearID] ?? null;
-
-            $curData = [
-                $m['speed_avg'],
-                $m['leads'],
-                $m['ranking'],
-                $m['traffic'],
-                timeToSeconds($m['engagement']),
-                $m['conversion']
-            ];
-
-            $prevData = [
-                $prevYear ? $prevYear['speed_avg'] : null,
-                $prevYear ? $prevYear['leads'] : null,
-                $prevMonth ? $prevMonth['ranking'] : null,
-                $prevYear ? $prevYear['traffic'] : null,
-                $prevYear ? timeToSeconds($prevYear['engagement']) : null,
-                $prevYear ? $prevYear['conversion'] : null
-            ];
-
-            $speed = between(round($curData[0] * 100), 49, 50, 63, 64, 76, 77, 89, 90);
-            $leads = between(comparison($curData[1], $prevData[1]), -50, -49, -16, -15, 0, 1, 10, 11);
-            $rank  = between(comparison($curData[2], $prevData[2]), -50, -49, -6, -5, 5, 6, 20, 21);
-            $traffic = between(comparison($curData[3], $prevData[3]), -50, -49, -16, -15, 0, 1, 10, 11);
-            $engagement = between($curData[4], 30, 31, 60, 61, 90, 91, 120, 121);
-            $conversion = between(comparison($curData[5], $prevData[5]), 1, 1.1, 2, 2.1, 3, 3.1, 5, 5.5);
-
-            $avg = ($speed + $leads + $rank + $traffic + $engagement + $conversion) / 6;
-            list($label, $class) = getHealthLabel($avg);
-
-            $stmtIns->execute([
-                ':mid' => $m['id'],
-                ':rid' => $campaign . ' : ' . date('F-Y', strtotime($dateStr)),
-                ':c' => $campaign,
-                ':d' => date('Y-m-d', strtotime($dateStr)),
-                ':s' => $speed, ':l' => $leads, ':r' => $rank, ':t' => $traffic, ':e' => $engagement, ':conv' => $conversion, ':h' => $avg, ':lbl' => $label, ':cls' => $class
-            ]);
-            $count++;
-        }
-
+        $count = runAutomatedAssessmentForMetrics($allMetrics, $pdo);
         echo json_encode(['success' => true, 'message' => "Automated assessment complete for $count campaigns."]);
+    } catch (Exception $e) {
+        echo json_encode(['success' => false, 'message' => $e->getMessage()]);
+    }
+    exit;
+}
+
+if ($action === 'run_month_assessment') {
+    $month_yr = $_POST['month_yr'] ?? null;
+    if (!$month_yr) {
+        echo json_encode(['success' => false, 'message' => 'Month & Yr required']);
+        exit;
+    }
+
+    try {
+        require_once 'functions.php';
+        $stmt = $pdo->prepare("SELECT * FROM campaign_metrics WHERE month_yr = :my");
+        $stmt->execute([':my' => $month_yr]);
+        $metrics = $stmt->fetchAll();
+
+        if (empty($metrics)) {
+            echo json_encode(['success' => false, 'message' => 'No metrics found for this period']);
+            exit;
+        }
+
+        $count = runAutomatedAssessmentForMetrics($metrics, $pdo);
+        echo json_encode(['success' => true, 'message' => "Automated assessment complete for $count campaigns in $month_yr."]);
     } catch (Exception $e) {
         echo json_encode(['success' => false, 'message' => $e->getMessage()]);
     }

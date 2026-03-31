@@ -49,6 +49,10 @@ try {
                                ORDER BY month_yr DESC LIMIT 100");
     $availableMetrics = $metricsStmt->fetchAll();
 
+    // Get unique Month & Yr values for assessment select
+    $stmtMonthsList = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY month_yr DESC");
+    $uniqueMonthsList = $stmtMonthsList->fetchAll(PDO::FETCH_COLUMN);
+
 } catch (PDOException $e) {
     die("Error fetching data: " . $e->getMessage());
 }
@@ -84,7 +88,17 @@ try {
                     </select>
                 </form>
             </div>
-            <button class="btn-assessment" id="btnRunFullAssessment" style="margin-left: 10px;">Run Full Automated Assessment</button>
+            <div class="run-month-group" style="display: flex; gap: 4px; margin-left: 10px;">
+                <select id="runMonthSelect" class="input-light" style="padding: 6px 12px; font-size: 11px; border-radius: 6px; border: 1px solid #d0d7de;">
+                    <option value="">Select Month & Yr...</option>
+                    <?php foreach ($uniqueMonthsList as $m): ?>
+                    <option value="<?= htmlspecialchars($m) ?>"><?= htmlspecialchars($m) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn-secondary" id="btnRunMonthAssessment" style="border-radius: 6px; font-size: 11px; white-space: nowrap;">Run for Selected Month</button>
+            </div>
+
+            <button class="btn-assessment" id="btnRunFullAssessment" style="margin-left: 10px;">Run Full Assessment</button>
             <button class="btn-add" id="btnAddAssessment" style="margin-left:auto;">+ Add Assessment</button>
         </div>
     </div>

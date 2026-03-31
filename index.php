@@ -6,6 +6,10 @@ $is_embedded = isset($_GET['embed']) && $_GET['embed'] == '1';
 try {
     $stmt = $pdo->query("SELECT * FROM campaign_metrics");
     $metrics = $stmt->fetchAll();
+    
+    // Get unique Month & Yr values for assessment select
+    $stmtMonths = $pdo->query("SELECT DISTINCT month_yr FROM campaign_metrics WHERE month_yr IS NOT NULL AND month_yr != '' ORDER BY month_yr DESC");
+    $uniqueMonths = $stmtMonths->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {
     die("Error fetching data: " . $e->getMessage());
 }
@@ -29,7 +33,16 @@ try {
         <div class="header-actions">
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
             <button class="btn-secondary" id="btnImport">Import CSV</button>
-            <button class="btn-assessment" id="btnRunAssessment">Run Automated Assessment</button>
+            <button class="btn-assessment" id="btnRunAssessment">Run All Assessment</button>
+            <div class="run-month-group" style="display: flex; gap: 4px;">
+                <select id="runMonthSelect" class="input-light" style="padding: 6px 12px; font-size: 11px; border-radius: 6px; border: 1px solid #d0d7de;">
+                    <option value="">Select Month & Yr...</option>
+                    <?php foreach ($uniqueMonths as $m): ?>
+                    <option value="<?= htmlspecialchars($m) ?>"><?= htmlspecialchars($m) ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <button class="btn-secondary" id="btnRunMonthAssessment" style="border-radius: 6px; font-size: 11px; white-space: nowrap;">Run for Selected Month</button>
+            </div>
             <button class="btn-add" id="btnAdd">+ Add Data</button>
         </div>
     </header>

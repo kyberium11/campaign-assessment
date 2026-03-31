@@ -89,3 +89,79 @@ function getHealthLabel($score) {
     if ($score <= 4.2) return ["Exceeds Expectations", "status-exceeds"];
     return ["Excellent Performance", "status-excellent"];
 }
+
+/**
+ * Runs automated assessment for a list of metric rows.
+ * @param array $metricsRows Array of metric objects from the database
+ * @param PDO $pdo Shared PDO connection
+ * @return int Number of rows processed
+ */
+function runAutomatedAssessmentForMetrics($metricsRows, $pdo) {
+    // 1. Build lookup table for easy access to previous months/years
+    $stmtAll = $pdo->query("SELECT * FROM campaign_metrics");
+    $allMetrics = $stmtAll->fetchAll();
+    $lookup = [];
+    foreach ($allMetrics as $m) {
+        $mid = $m['campaign'] . '-' . date('F-Y', strtotime($m['month_yr']));
+        $lookup[$mid] = $m;
+    }
+
+    $sql = "INSERT INTO campaign_assessments 
+        (metrics_row_id, record_id, campaign_code, assessment_date, speed_score, leads_score, rankings_score, traffic_score, engagement_score, conversion_score, health_score, assessment_label, status_class)
+        VALUES 
+        (:mid, :rid, :c, :d, :s, :l, :r, :t, :e, :conv, :h, :lbl, :cls)
+        ON DUPLICATE KEY UPDATE 
+        speed_score=:s, leads_score=:l, rankings_score=:r, traffic_score=:t, engagement_score=:e, conversion_score=:conv, health_score=:h, assessment_label=:lbl, status_class=:cls";
+    $stmtIns = $pdo->prepare($sql);
+
+    $count = 0;
+    foreach ($metricsRows as $m) {
+        $campaign = $m['campaign'];
+        $dateStr = $m['month_yr'];
+        
+        $prevMonthID = getPrevMonthID($campaign, $dateStr);
+        $prevYearID = getPrevYearID($campaign, $dateStr);
+
+        $prevMonth = $lookup[$prevMonthID] ?? null;
+        $prevYear = $lookup[$prevYearID] ?? null;
+
+        $curData = [
+            $m['speed_avg'],
+            $m['leads'],
+            $m['ranking'],
+            $m['traffic'],
+            timeToSeconds($m['engagement']),
+            $m['conversion']
+        ];
+
+        $prevData = [
+            $prevYear ? $prevYear['speed_avg'] : null,
+            $prevYear ? $prevYear['leads'] : null,
+            $prevMonth ? $prevMonth['ranking'] : null,
+            $prevYear ? $prevYear['traffic'] : null,
+            $prevYear ? timeToSeconds($prevYear['engagement']) : null,
+            $prevYear ? $prevYear['conversion'] : null
+        ];
+
+        $speed = between(round($curData[0] * 100), 49, 50, 63, 64, 76, 77, 89, 90);
+        $leads = between(comparison($curData[1], $prevData[1]), -50, -49, -16, -15, 0, 1, 10, 11);
+        $rank  = between(comparison($curData[2], $prevData[2]), -50, -49, -6, -5, 5, 6, 20, 21);
+        $traffic = between(comparison($curData[3], $prevData[3]), -50, -49, -16, -15, 0, 1, 10, 11);
+        $engagement = between($curData[4], 30, 31, 60, 61, 90, 91, 120, 121);
+        $conversion = between(comparison($curData[5], $prevData[5]), 1, 1.1, 2, 2.1, 3, 3.1, 5, 5.5);
+
+        $avg = ($speed + $leads + $rank + $traffic + $engagement + $conversion) / 6;
+        list($label, $class) = getHealthLabel($avg);
+
+        $stmtIns->execute([
+            ':mid' => $m['id'],
+            ':rid' => $campaign . ' : ' . date('F-Y', strtotime($dateStr)),
+            ':c' => $campaign,
+            ':d' => date('Y-m-d', strtotime($dateStr)),
+            ':s' => $speed, ':l' => $leads, ':r' => $rank, ':t' => $traffic, ':e' => $engagement, ':conv' => $conversion, ':h' => $avg, ':lbl' => $label, ':cls' => $class
+        ]);
+        $count++;
+    }
+    
+    return $count;
+}
