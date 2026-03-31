@@ -1,104 +1,82 @@
 <?php
 
 /**
- * Normalizes date string to YYYY-MM
+ * Helper to parse time string (MM:SS) to seconds
  */
-function normalizeDate($dateStr) {
-    if (empty($dateStr)) return '';
-    $date = date_create($dateStr);
-    return $date ? date_format($date, 'Y-m') : '';
+function timeToSeconds($timeStr) {
+    if (empty($timeStr)) return 0;
+    $parts = explode(':', $timeStr);
+    if (count($parts) == 1) return (int)$parts[0];
+    return ($parts[0] * 60) + $parts[1];
 }
 
 /**
- * Gets the date string for "last month" given a date string
+ * Normalizes date string to Month-Year format used in IDs
  */
-function getLastMonth($dateStr) {
+function getMetricID($campaign, $dateStr) {
+    $date = date_create($dateStr);
+    if (!$date) return '';
+    return $campaign . '-' . date_format($date, 'F-Y');
+}
+
+/**
+ * Gets the Metric ID for previous month
+ */
+function getPrevMonthID($campaign, $dateStr) {
     $date = date_create($dateStr);
     if (!$date) return '';
     date_modify($date, '-1 month');
-    return date_format($date, 'Y-m');
+    return $campaign . '-' . date_format($date, 'F-Y');
 }
 
 /**
- * Gets the date string for "last year" given a date string
+ * Gets the Metric ID for previous year
  */
-function getLastYear($dateStr) {
+function getPrevYearID($campaign, $dateStr) {
     $date = date_create($dateStr);
     if (!$date) return '';
     date_modify($date, '-1 year');
-    return date_format($date, 'Y-m');
+    return $campaign . '-' . date_format($date, 'F-Y');
 }
 
 /**
- * Website Speed Scoring
- * Computation: Percentage change of (Mobile*0.6 + Desktop*0.4) this month vs last month
+ * Airtable 'comparison' logic
+ * Returns percentage change or absolute value if oldData is 0
  */
-function calculateSpeedScore($currentMobile, $currentDesktop, $prevMobile, $prevDesktop) {
-    $currentWeighted = ($currentMobile * 0.6) + ($currentDesktop * 0.4);
-    $prevWeighted = ($prevMobile * 0.6) + ($prevDesktop * 0.4);
-
-    if ($prevWeighted == 0) return 3; // Neutral if no prev data
-
-    $change = ($currentWeighted / $prevWeighted);
+function comparison($newData, $oldData) {
+    // Exact replication of JS logic: 
+    // let computation = Math.round(newData * 100);
+    // if (oldData != 0 && newData != null) { ... }
     
-    if ($change >= 0.95) return 5;
-    if ($change >= 0.85) return 4;
-    if ($change >= 0.75) return 3;
-    if ($change >= 0.50) return 2;
-    return 1;
-}
-
-/**
- * Ranking Score (Keywords change vs last month)
- */
-function calculateRankingScore($curr, $prev) {
-    $diff = $curr - $prev;
-    if ($diff >= 20) return 5;
-    if ($diff >= 10) return 4;
-    if ($diff >= -10) return 3;
-    if ($diff >= -19) return 2;
-    return 1;
-}
-
-/**
- * Leads Score (Change vs last year)
- */
-function calculateLeadsScore($curr, $prev) {
-    $diff = $curr - $prev;
-    if ($diff >= 20) return 5;
-    if ($diff >= 10) return 4;
-    if ($diff >= -10) return 3;
-    if ($diff >= -19) return 2;
-    return 1;
-}
-
-/**
- * Traffic/Engagement Score (% Change vs last year)
- */
-function calculateDiffPercentScore($curr, $prev) {
-    if ($prev == 0) return 3;
-    $percentChange = (($curr - $prev) / $prev);
+    $computation = round($newData * 100);
     
-    if ($percentChange >= 0.20) return 5;
-    if ($percentChange >= 0.10) return 4;
-    if ($percentChange >= -0.10) return 3;
-    if ($percentChange >= -0.19) return 2;
-    return 1;
+    // In JS, null != 0 is true. In PHP, null != 0 is false.
+    // To match JS, we check if $oldData is not zero and not null.
+    if ($oldData !== null && $oldData != 0 && $newData !== null) {
+        return round((($newData - $oldData) / $oldData) * 100);
+    } elseif ($oldData === 0 || $oldData === "0" || $oldData === 0.0) {
+        return round($newData);
+    } elseif ($oldData === null) {
+        // This matches the JS 'computation' default before the if blocks
+        return $computation;
+    }
+    
+    return $computation;
 }
 
 /**
- * Conversion Score (Leads/Traffic * 100)
+ * Airtable 'between' logic
  */
-function calculateConversionScore($leads, $traffic) {
-    if ($traffic == 0) return 0;
-    $conv = ($leads / $traffic) * 100;
+function between($score, $r1, $r2, $r3, $r4, $r5, $r6, $r7, $r8) {
+    if ($score === null) return 404;
     
-    if ($conv >= 5) return 5;
-    if ($conv >= 4) return 4;
-    if ($conv >= 3) return 3;
-    if ($conv >= 2) return 2;
-    if ($conv >= 1) return 1;
-    return 0;
+    if ($score <= $r1) return 1;
+    if ($score >= $r2 && $score <= $r3) return 2;
+    if ($score >= $r4 && $score <= $r5) return 3;
+    if ($score >= $r6 && $score <= $r7) return 4;
+    if ($score >= $r8) return 5;
+    
+    return 3; // Fallback
 }
 
 /**

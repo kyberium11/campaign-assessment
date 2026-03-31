@@ -84,28 +84,32 @@ try {
                     </select>
                 </form>
             </div>
+            <button class="btn-assessment" id="btnRunFullAssessment" style="margin-left: 10px;">Run Full Automated Assessment</button>
             <button class="btn-add" id="btnAddAssessment" style="margin-left:auto;">+ Add Assessment</button>
         </div>
     </div>
+
 
     <div class="table-container" style="margin: 20px; border-radius: 6px;">
         <table id="assessmentTable">
             <thead>
                 <tr>
-                    <th class="col-delete"></th>
-                    <th>Record ID</th>
-                    <th>Campaign Code</th>
-                    <th>Date</th>
-                    <th class="col-center"># Website Speed</th>
-                    <th class="col-center"># Leads</th>
-                    <th class="col-center"># Rankings</th>
-                    <th class="col-center"># Traffic</th>
-                    <th class="col-center"># Engagement</th>
-                    <th class="col-center"># Conversion</th>
-                    <th class="col-center">Health Score</th>
-                    <th>Campaign Assessment</th>
+                    <th class="col-delete" style="width: 24px;"></th>
+                    <th class="sortable">Record ID</th>
+
+                    <th class="sortable">Campaign Code</th>
+                    <th class="sortable">Date</th>
+                    <th class="col-center sortable"># Website Speed</th>
+                    <th class="col-center sortable"># Leads</th>
+                    <th class="col-center sortable"># Rankings</th>
+                    <th class="col-center sortable"># Traffic</th>
+                    <th class="col-center sortable"># Engagement</th>
+                    <th class="col-center sortable"># Conversion</th>
+                    <th class="col-center sortable">Health Score</th>
+                    <th class="sortable">Campaign Assessment</th>
                 </tr>
             </thead>
+
             <tbody>
                 <?php foreach ($results as $res): ?>
                 <tr data-id="<?= $res['id'] ?>">

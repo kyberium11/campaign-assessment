@@ -218,7 +218,44 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     });
 
+    // --- Run Assessment ---
+    const btnRunAssessment = document.getElementById('btnRunAssessment');
+    if (btnRunAssessment) {
+        btnRunAssessment.addEventListener('click', () => {
+            if (!confirm('Run full automated assessment for all metrics? This will update health scores.')) return;
+
+            btnRunAssessment.textContent = 'Running...';
+            btnRunAssessment.disabled = true;
+
+            const formData = new FormData();
+            formData.append('action', 'run_full_assessment');
+
+            fetch('api.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        alert(result.message);
+                        window.location.href = 'assessment.php';
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Network error');
+                })
+                .finally(() => {
+                    btnRunAssessment.textContent = 'Run Automated Assessment';
+                    btnRunAssessment.disabled = false;
+                });
+        });
+    }
+
     // --- Spreadsheet-like Paste & Add Row ---
+
     const tableContainer = document.getElementById('metricsTableContainer');
     const metricsTable = document.getElementById('metricsTable');
     const addRowZone = document.getElementById('addRowZone');
@@ -508,5 +545,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Embed Logic ---
+    // --- Table Sorting Logic ---
+    const headers = document.querySelectorAll('th.sortable');
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const index = Array.from(header.parentElement.children).indexOf(header);
+            const isAscending = header.classList.contains('sort-asc');
+            const direction = isAscending ? -1 : 1;
+
+            // Update header UI
+            headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc'));
+            header.classList.add(isAscending ? 'sort-desc' : 'sort-asc');
+
+            const rowsArray = Array.from(tbody.querySelectorAll('tr:not(.new-row)'));
+            
+            rowsArray.sort((rowA, rowB) => {
+                const cellA = rowA.children[index].innerText.trim();
+                const cellB = rowB.children[index].innerText.trim();
+
+                // Handle different types
+                const valA = parseCellValue(cellA);
+                const valB = parseCellValue(cellB);
+
+                if (valA < valB) return -1 * direction;
+                if (valA > valB) return 1 * direction;
+                return 0;
+            });
+
+            // Re-append sorted rows
+            rowsArray.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+
+    function parseCellValue(value) {
+        // Clean %, commas, etc.
+        let clean = value.replace('%', '').replace(/,/g, '').trim();
+        
+        // Handle dates (e.g. 3/15/2023 or March 15, 2023)
+        if (clean.includes('/') || clean.includes(',') || isNaN(clean)) {
+            const date = Date.parse(clean);
+            if (!isNaN(date)) return date;
+        }
+
+        // Handle time (e.g. 0:20)
+        if (clean.includes(':')) {
+            const parts = clean.split(':');
+            return (parseInt(parts[0]) * 60) + (parseInt(parts[1]) || 0);
+        }
+
+        // Handle numbers
+        if (!isNaN(parseFloat(clean))) return parseFloat(clean);
+
+        return clean.toLowerCase();
+    }
 });
+

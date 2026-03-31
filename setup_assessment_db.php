@@ -24,76 +24,86 @@ try {
         FOREIGN KEY (metrics_row_id) REFERENCES campaign_metrics(id) ON DELETE CASCADE
     )";
     $pdo->exec($sql);
-    echo "Table 'campaign_assessments' created successfully.<br>";
+    $pdo->exec("TRUNCATE TABLE campaign_assessments");
+    echo "Table 'campaign_assessments' cleared.<br>";
 
-    // 2. Refresh/Migrate data based on current campaign_metrics
+    // Get all metrics
     $stmt = $pdo->query("SELECT * FROM campaign_metrics");
-    $allMetrics = $stmt->fetchAll();
+    $metrics = $stmt->fetchAll();
 
-    // Map metrics for lookup (same logic as before)
+    // Map by metrics_id for easy lookups
     $lookup = [];
-    foreach ($allMetrics as $m) {
-        $dateKey = normalizeDate($m['month_yr']);
-        $lookup[$m['campaign']][$dateKey] = $m;
+    foreach ($metrics as $m) {
+        $lookup[$m['metrics_id']] = $m;
     }
 
-    $stmtInsert = $pdo->prepare("INSERT IGNORE INTO campaign_assessments 
+    $insertStmt = $pdo->prepare("INSERT INTO campaign_assessments 
         (metrics_row_id, record_id, campaign_code, assessment_date, speed_score, leads_score, rankings_score, traffic_score, engagement_score, conversion_score, health_score, assessment_label, status_class)
         VALUES 
         (:metrics_id, :record_id, :campaign, :date, :speed, :leads, :rank, :traffic, :engagement, :conversion, :health, :label, :class)");
 
     $count = 0;
-    foreach ($allMetrics as $curr) {
-        $campaign = $curr['campaign'];
-        $prevMonthDate = getLastMonth($curr['month_yr']);
-        $prevYearDate = getLastYear($curr['month_yr']);
+    foreach ($metrics as $m) {
+        $campaign = $m['campaign'];
+        $dateStr = $m['month_yr'];
         
-        $prevMonth = $lookup[$campaign][$prevMonthDate] ?? null;
-        $prevYear = $lookup[$campaign][$prevYearDate] ?? null;
+        $prevMonthID = getPrevMonthID($campaign, $dateStr);
+        $prevYearID = getPrevYearID($campaign, $dateStr);
 
-        // Perform calculations (re-using functions.php)
-        $speedScore = $prevMonth ? calculateSpeedScore($curr['speed_mobile'], $curr['speed_desktop'], $prevMonth['speed_mobile'], $prevMonth['speed_desktop']) : 3;
-        $rankingScore = $prevMonth ? calculateRankingScore($curr['ranking'], $prevMonth['ranking']) : 3;
-        $leadsScore = $prevYear ? calculateLeadsScore($curr['leads'], $prevYear['leads']) : 3;
-        $trafficScore = $prevYear ? calculateDiffPercentScore($curr['traffic'], $prevYear['traffic']) : 3;
-        
-        // Inline timeToSeconds for migration
-        $currEng = (function($t) {
-            $parts = explode(':', $t);
-            return count($parts) < 2 ? 0 : ($parts[0] * 60) + $parts[1];
-        })($curr['engagement']);
-        
-        $prevEng = $prevYear ? (function($t) {
-            $parts = explode(':', $t);
-            return count($parts) < 2 ? 0 : ($parts[0] * 60) + $parts[1];
-        })($prevYear['engagement']) : 0;
-        
-        $engagementScore = $prevYear ? calculateDiffPercentScore($currEng, $prevEng) : 3;
-        $convScore = calculateConversionScore($curr['leads'], $curr['traffic']);
+        $prevMonth = $lookup[$prevMonthID] ?? null;
+        $prevYear = $lookup[$prevYearID] ?? null;
 
-        $avg = ($speedScore + $leadsScore + $rankingScore + $trafficScore + $engagementScore + $convScore) / 6;
+        // Current data values
+        $curData = [
+            $m['speed_avg'],
+            $m['leads'],
+            $m['ranking'],
+            $m['traffic'],
+            timeToSeconds($m['engagement']),
+            $m['conversion']
+        ];
+
+        // Previous data values (matching Airtable script logic)
+        $prevData = [
+            $prevYear ? $prevYear['speed_avg'] : null,
+            $prevYear ? $prevYear['leads'] : null,
+            $prevMonth ? $prevMonth['ranking'] : null,
+            $prevYear ? $prevYear['traffic'] : null,
+            $prevYear ? timeToSeconds($prevYear['engagement']) : null,
+            $prevYear ? $prevYear['conversion'] : null
+        ];
+
+        // Scoring (Matching Airtable Script ranges)
+        $speed = between(round($curData[0] * 100), 49, 50, 63, 64, 76, 77, 89, 90);
+        $leads = between(comparison($curData[1], $prevData[1]), -50, -49, -16, -15, 0, 1, 10, 11);
+        $rank  = between(comparison($curData[2], $prevData[2]), -50, -49, -6, -5, 5, 6, 20, 21);
+        $traffic = between(comparison($curData[3], $prevData[3]), -50, -49, -16, -15, 0, 1, 10, 11);
+        $engagement = between($curData[4], 30, 31, 60, 61, 90, 91, 120, 121);
+        $conversion = between(comparison($curData[5], $prevData[5]), 1, 1.1, 2, 2.1, 3, 3.1, 5, 5.5);
+
+        $avg = ($speed + $leads + $rank + $traffic + $engagement + $conversion) / 6;
         list($label, $class) = getHealthLabel($avg);
 
-        $stmtInsert->execute([
-            ':metrics_id' => $curr['id'],
-            ':record_id' => $campaign . ' : ' . date('F-Y', strtotime($curr['month_yr'])),
-            ':campaign' => $campaign,
-            ':date' => date('Y-m-d', strtotime($curr['month_yr'])),
-            ':speed' => $speedScore,
-            ':leads' => $leadsScore,
-            ':rank' => $rankingScore,
-            ':traffic' => $trafficScore,
-            ':engagement' => $engagementScore,
-            ':conversion' => $convScore,
-            ':health' => $avg,
-            ':label' => $label,
-            ':class' => $class
+        $insertStmt->execute([
+            ':metrics_id'   => $m['id'],
+            ':record_id'    => $campaign . ' : ' . date('F-Y', strtotime($dateStr)),
+            ':campaign'     => $campaign,
+            ':date'         => date('Y-m-d', strtotime($dateStr)),
+            ':speed'        => $speed,
+            ':leads'        => $leads,
+            ':rank'         => $rank,
+            ':traffic'      => $traffic,
+            ':engagement'   => $engagement,
+            ':conversion'   => $conversion,
+            ':health'       => $avg,
+            ':label'        => $label,
+            ':class'        => $class
         ]);
-        $count += $stmtInsert->rowCount();
+        $count++;
     }
 
-    echo "Migration complete. $count assessments generated and stored in database.";
+    echo "Assessed $count campaigns and stored results.<br>";
 
-} catch (PDOException $e) {
-    die("Setup failed: " . $e->getMessage());
+} catch (Exception $e) {
+    die("Assessment failed: " . $e->getMessage());
 }

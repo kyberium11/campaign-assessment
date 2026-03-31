@@ -29,30 +29,34 @@ try {
         <div class="header-actions">
             <input type="file" id="csvInput" accept=".csv" style="display: none;">
             <button class="btn-secondary" id="btnImport">Import CSV</button>
+            <button class="btn-assessment" id="btnRunAssessment">Run Automated Assessment</button>
             <button class="btn-add" id="btnAdd">+ Add Data</button>
         </div>
     </header>
+
 <?php endif; ?>
 
     <div class="table-container" id="metricsTableContainer" tabindex="0">
         <table id="metricsTable">
             <thead>
                 <tr>
-                    <th class="col-delete"></th>
-                    <th>Metrics_ID</th>
-                    <th>Record ID</th>
-                    <th>Campaign</th>
-                    <th>Month & Yr</th>
-                    <th class="col-percentage">Website Speed (Mobile)</th>
-                    <th class="col-percentage">Website Speed (Desktop)</th>
-                    <th class="col-percentage">Website Speed</th>
-                    <th class="col-number">Leads</th>
-                    <th class="col-number">Ranking</th>
-                    <th class="col-number">Traffic</th>
-                    <th class="col-center">Engagement</th>
-                    <th class="col-decimal">Conversion</th>
+                    <th class="col-delete" style="width: 24px;"></th>
+                    <th class="sortable">Metrics_ID</th>
+
+                    <th class="sortable">Record ID</th>
+                    <th class="sortable">Campaign</th>
+                    <th class="sortable">Month & Yr</th>
+                    <th class="col-percentage sortable">Website Speed (Mobile)</th>
+                    <th class="col-percentage sortable">Website Speed (Desktop)</th>
+                    <th class="col-percentage sortable">Website Speed</th>
+                    <th class="col-number sortable">Leads</th>
+                    <th class="col-number sortable">Ranking</th>
+                    <th class="col-number sortable">Traffic</th>
+                    <th class="col-center sortable">Engagement</th>
+                    <th class="col-decimal sortable">Conversion</th>
                 </tr>
             </thead>
+
             <tbody>
                 <?php foreach ($metrics as $row): ?>
                 <tr data-id="<?= $row['id'] ?>">

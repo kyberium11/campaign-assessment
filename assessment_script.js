@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labelSpan.className = 'status-badge ' + data.class + ' label-cell';
                 } else {
                     alert('Error: ' + data.message);
-                    cell.innerHTML = value; // keep as is or revert
+                    cell.innerHTML = originalValue; // revert
                 }
             });
     }
@@ -127,4 +127,89 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
     };
+
+    // --- Run All Assessment ---
+    const btnRunFullAssessment = document.getElementById('btnRunFullAssessment');
+    if (btnRunFullAssessment) {
+        btnRunFullAssessment.addEventListener('click', () => {
+            if (!confirm('Run full automated assessment for all metrics? This will update all health scores.')) return;
+
+            btnRunFullAssessment.textContent = 'Running...';
+            btnRunFullAssessment.disabled = true;
+
+            const formData = new FormData();
+            formData.append('action', 'run_full_assessment');
+
+            fetch('api.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        alert(result.message);
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + result.message);
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('Network error');
+                })
+                .finally(() => {
+                    btnRunFullAssessment.textContent = 'Run Full Automated Assessment';
+                    btnRunFullAssessment.disabled = false;
+                });
+        });
+    }
+
+    // --- Table Sorting Logic ---
+    const headers = document.querySelectorAll('th.sortable');
+    const tbody = table.querySelector('tbody');
+
+    headers.forEach(header => {
+        header.addEventListener('click', () => {
+            const index = Array.from(header.parentElement.children).indexOf(header);
+            const isAscending = header.classList.contains('sort-asc');
+            const direction = isAscending ? -1 : 1;
+
+            // Update header UI
+            headers.forEach(h => h.classList.remove('sort-asc', 'sort-desc', 'sortable'));
+            headers.forEach(h => h.classList.add('sortable')); // Ensure all keep sortable class
+            header.classList.add(isAscending ? 'sort-desc' : 'sort-asc');
+
+            const rowsArray = Array.from(tbody.querySelectorAll('tr'));
+            
+            rowsArray.sort((rowA, rowB) => {
+                const cellA = rowA.children[index].innerText.trim();
+                const cellB = rowB.children[index].innerText.trim();
+
+                const valA = parseAssessmentCellValue(cellA);
+                const valB = parseAssessmentCellValue(cellB);
+
+                if (valA < valB) return -1 * direction;
+                if (valA > valB) return 1 * direction;
+                return 0;
+            });
+
+            // Re-append sorted rows
+            rowsArray.forEach(row => tbody.appendChild(row));
+        });
+    });
+
+    function parseAssessmentCellValue(value) {
+        let clean = value.replace(/,/g, '').trim();
+        
+        // Handle dates (e.g. Feb 01, 2026)
+        if (clean.includes(',') || isNaN(clean)) {
+            const date = Date.parse(clean);
+            if (!isNaN(date)) return date;
+        }
+
+        // Handle numbers/scores
+        if (!isNaN(parseFloat(clean))) return parseFloat(clean);
+
+        return clean.toLowerCase();
+    }
 });

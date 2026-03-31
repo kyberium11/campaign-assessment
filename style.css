@@ -48,6 +48,43 @@ h1 {
     background-color: #085ebd;
 }
 
+.btn-secondary {
+    background: #f6f8fa;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+    background: #eff2f5;
+}
+
+.btn-assessment {
+    background: #af52de;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+}
+
+.btn-assessment:hover {
+    background: #9a33cc;
+}
+
+.btn-assessment:active {
+    background: #8e2dbd;
+}
+
+
 .table-container {
     overflow-x: auto;
     border: 1px solid var(--border-color);
@@ -87,19 +124,53 @@ thead th {
     user-select: none;
 }
 
+thead th.sortable {
+    cursor: pointer;
+    position: relative;
+    padding-right: 25px;
+}
+
+thead th.sortable:hover {
+    background-color: #f0f3f6;
+    color: var(--primary-color);
+}
+
+thead th.sortable::after {
+    content: '↕';
+    position: absolute;
+    right: 8px;
+    opacity: 0.3;
+    font-size: 10px;
+}
+
+thead th.sort-asc::after {
+    content: '↑';
+    opacity: 1;
+    color: var(--primary-color);
+}
+
+thead th.sort-desc::after {
+    content: '↓';
+    opacity: 1;
+    color: var(--primary-color);
+}
+
 tbody tr:hover {
     background-color: var(--row-hover-bg);
 }
 
+
 /* Delete button column */
 .col-delete {
-    width: 24px;
-    min-width: 24px;
-    max-width: 24px;
+    width: 24px !important;
+    min-width: 24px !important;
+    max-width: 24px !important;
     padding: 0 !important;
     text-align: center;
     border-right: none !important;
+    box-sizing: border-box;
 }
+
 
 th.col-delete {
     background: var(--header-bg);
