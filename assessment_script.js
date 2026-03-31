@@ -13,39 +13,39 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = row.dataset.id;
         const recordId = row.querySelector('td:nth-child(2)')?.innerText || 'this assessment';
 
-        if (!confirm(`Delete "${recordId}"?`)) return;
+        showConfirm(`Delete "${recordId}"?`, () => {
+            // Send delete request
+            const formData = new FormData();
+            formData.append('action', 'delete_assessment');
+            formData.append('id', id);
 
-        // Send delete request
-        const formData = new FormData();
-        formData.append('action', 'delete_assessment');
-        formData.append('id', id);
+            deleteBtn.textContent = '...';
+            deleteBtn.disabled = true;
 
-        deleteBtn.textContent = '...';
-        deleteBtn.disabled = true;
-
-        fetch('api.php', {
-            method: 'POST',
-            body: formData
-        })
-            .then(r => r.json())
-            .then(result => {
-                if (result.success) {
-                    // Fade out and remove row
-                    row.style.transition = 'opacity 0.3s';
-                    row.style.opacity = '0';
-                    setTimeout(() => row.remove(), 300);
-                } else {
-                    alert('Error: ' + result.message);
+            fetch('api.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(r => r.json())
+                .then(result => {
+                    if (result.success) {
+                        // Fade out and remove row
+                        row.style.transition = 'opacity 0.3s';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    } else {
+                        showAlert('Error: ' + result.message);
+                        deleteBtn.textContent = '−';
+                        deleteBtn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showAlert('Network error');
                     deleteBtn.textContent = '−';
                     deleteBtn.disabled = false;
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Network error');
-                deleteBtn.textContent = '−';
-                deleteBtn.disabled = false;
-            });
+                });
+        }, 'Delete', true);
     });
 
     // --- Inline Selection/Editing for Assessment Scores ---
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     labelSpan.innerText = data.label;
                     labelSpan.className = 'status-badge ' + data.class + ' label-cell';
                 } else {
-                    alert('Error: ' + data.message);
+                    showAlert('Error: ' + data.message);
                     cell.innerHTML = originalValue; // revert
                 }
             });
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     window.location.reload();
                 } else {
-                    alert('Failed: ' + data.message);
+                    showAlert('Failed: ' + data.message);
                 }
             });
     };
@@ -132,35 +132,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnRunFullAssessment = document.getElementById('btnRunFullAssessment');
     if (btnRunFullAssessment) {
         btnRunFullAssessment.addEventListener('click', () => {
-            if (!confirm('Run full automated assessment for all metrics? This will update all health scores.')) return;
+            showConfirm('Run full automated assessment for all metrics? This will update all health scores.', () => {
+                btnRunFullAssessment.textContent = 'Running...';
+                btnRunFullAssessment.disabled = true;
 
-            btnRunFullAssessment.textContent = 'Running...';
-            btnRunFullAssessment.disabled = true;
+                const formData = new FormData();
+                formData.append('action', 'run_full_assessment');
 
-            const formData = new FormData();
-            formData.append('action', 'run_full_assessment');
-
-            fetch('api.php', {
-                method: 'POST',
-                body: formData
-            })
-                .then(r => r.json())
-                .then(result => {
-                    if (result.success) {
-                        alert(result.message);
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + result.message);
-                    }
+                fetch('api.php', {
+                    method: 'POST',
+                    body: formData
                 })
-                .catch(err => {
-                    console.error(err);
-                    alert('Network error');
-                })
-                .finally(() => {
-                    btnRunFullAssessment.textContent = 'Run Full Automated Assessment';
-                    btnRunFullAssessment.disabled = false;
-                });
+                    .then(r => r.json())
+                    .then(result => {
+                        if (result.success) {
+                            showAlert(result.message, () => {
+                                window.location.reload();
+                            });
+                        } else {
+                            showAlert('Error: ' + result.message);
+                        }
+                    })
+                    .catch(err => {
+                        console.error(err);
+                        showAlert('Network error');
+                    })
+                    .finally(() => {
+                        btnRunFullAssessment.textContent = 'Run Full Automated Assessment';
+                        btnRunFullAssessment.disabled = false;
+                    });
+            });
         });
     }
 
@@ -212,4 +213,63 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return clean.toLowerCase();
     }
+
+    // --- Global Modal Utilities ---
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmTitle = document.getElementById('confirmTitle');
+    const confirmMessage = document.getElementById('confirmMessage');
+    const btnConfirmAction = document.getElementById('btnConfirmAction');
+    const btnConfirmCancel = document.getElementById('btnConfirmCancel');
+    const btnCloseConfirmModal = document.getElementById('btnCloseConfirmModal');
+
+    let confirmCallback = null;
+
+    window.showConfirm = function (message, onConfirm, actionText = 'Proceed', isDanger = false, title = 'Confirm Action') {
+        confirmMessage.textContent = message;
+        confirmTitle.textContent = title;
+        btnConfirmAction.textContent = actionText;
+        btnConfirmCancel.style.display = 'block';
+        
+        if (isDanger) {
+            btnConfirmAction.classList.add('danger');
+        } else {
+            btnConfirmAction.classList.remove('danger');
+        }
+
+        confirmCallback = onConfirm;
+        confirmModal.classList.add('open');
+    };
+
+    window.showAlert = function (message, onOk = null, title = 'Notification') {
+        confirmMessage.textContent = message;
+        confirmTitle.textContent = title;
+        btnConfirmAction.textContent = 'OK';
+        btnConfirmCancel.style.display = 'none';
+        btnConfirmAction.classList.remove('danger');
+
+        confirmCallback = onOk;
+        confirmModal.classList.add('open');
+    };
+
+    function closeConfirm() {
+        confirmModal.classList.remove('open');
+        confirmCallback = null;
+    }
+
+    btnConfirmAction.addEventListener('click', () => {
+        const callback = confirmCallback;
+        closeConfirm();
+        if (callback) callback();
+    });
+
+    btnConfirmCancel.addEventListener('click', closeConfirm);
+    btnCloseConfirmModal.addEventListener('click', closeConfirm);
+
+    // Close on click outside
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+            closeConfirm();
+        }
+    });
+
 });

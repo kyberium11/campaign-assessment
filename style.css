@@ -252,6 +252,11 @@ td input.cell-editor {
     padding: 24px;
 }
 
+.modal-body {
+    padding: 10px 0 20px 0;
+    line-height: 1.5;
+}
+
 .modal-header {
     display: flex;
     justify-content: space-between;
@@ -306,6 +311,14 @@ td input.cell-editor {
     display: flex;
     justify-content: flex-end;
     gap: 12px;
+}
+
+#btnConfirmAction {
+    background-color: var(--primary-color);
+}
+
+#btnConfirmAction.danger {
+    background-color: #cf222e;
 }
 
 .btn-secondary {

@@ -170,6 +170,23 @@ try {
         </div>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirmModal">
+        <div class="modal" style="width: 400px;">
+            <div class="modal-header">
+                <h2 id="confirmTitle">Confirm Action</h2>
+                <button class="modal-close" id="btnCloseConfirmModal">&times;</button>
+            </div>
+            <div class="modal-body" id="confirmMessage">
+                Are you sure you want to proceed?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="btnConfirmCancel">Cancel</button>
+                <button type="button" class="btn-add" id="btnConfirmAction">Proceed</button>
+            </div>
+        </div>
+    </div>
+
     <script src="assessment_script.js?v=<?= filemtime('assessment_script.js') ?>"></script>
 </body>
 </html>
